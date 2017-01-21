@@ -6,17 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://zhangke3106.github.io">
-  <title>Tag: android进阶 | Mr.zk的小窝</title>
+  <title>聊聊对Android视图滚动状态的监听 | Mr.zk的小窝</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="一枚Android开发攻城狮">
-<meta property="og:type" content="website">
-<meta property="og:title" content="Mr.zk的小窝">
-<meta property="og:url" content="https://zhangke3106.github.io/tags/android进阶/index.html">
+  <meta name="description" content="在官方support.v4包里，提供给我们一个兼容类ViewCompat。ViewCompat里面针对几个版本有不同的实现，根据不同版本进行判断, 但是要注意的是，ViewCompat仅仅让你调用不崩溃，并不保证你调用的结果在不同版本的机器上一致。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="聊聊对Android视图滚动状态的监听">
+<meta property="og:url" content="https://zhangke3106.github.io/2017/01/21/聊聊对Android视图滚动状态的监听/index.html">
 <meta property="og:site_name" content="Mr.zk的小窝">
-<meta property="og:description" content="一枚Android开发攻城狮">
+<meta property="og:description" content="在官方support.v4包里，提供给我们一个兼容类ViewCompat。ViewCompat里面针对几个版本有不同的实现，根据不同版本进行判断, 但是要注意的是，ViewCompat仅仅让你调用不崩溃，并不保证你调用的结果在不同版本的机器上一致。">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-d73a5106717e3c4b.gif?imageMogr2/auto-orient/strip">
+<meta property="og:updated_time" content="2017-01-21T04:33:37.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Mr.zk的小窝">
-<meta name="twitter:description" content="一枚Android开发攻城狮">
+<meta name="twitter:title" content="聊聊对Android视图滚动状态的监听">
+<meta name="twitter:description" content="在官方support.v4包里，提供给我们一个兼容类ViewCompat。ViewCompat里面针对几个版本有不同的实现，根据不同版本进行判断, 但是要注意的是，ViewCompat仅仅让你调用不崩溃，并不保证你调用的结果在不同版本的机器上一致。">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/2157910-d73a5106717e3c4b.gif?imageMogr2/auto-orient/strip">
   
     <link rel="alternative" href="/atom.xml" title="Mr.zk的小窝" type="application/atom+xml">
   
@@ -142,36 +145,76 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            
+            <article id="post-聊聊对Android视图滚动状态的监听" class="article article-type-post " itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+        
   
+    <h1 class="article-title" itemprop="name">
+      聊聊对Android视图滚动状态的监听
+    </h1>
   
-    
-    
-      
-      
-      <section class="archives-wrap">
-        <div class="archive-year-wrap">
-          <a href="/archives/2017" class="archive-year">2017</a>
-        </div>
-        <div class="archives">
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/01/21/聊聊对Android视图滚动状态的监听/" class="archive-article-date">
+
+        
+        <a href="/2017/01/21/聊聊对Android视图滚动状态的监听/" class="archive-article-date">
   	<time datetime="2017-01-21T02:46:20.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-01-21</time>
 </a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/01/21/聊聊对Android视图滚动状态的监听/">聊聊对Android视图滚动状态的监听</a>
-    </h1>
-  
+        
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>在官方support.v4包里，提供给我们一个兼容类<code>ViewCompat</code>。ViewCompat里面针对几个版本有不同的实现，根据不同版本进行判断, 但是要注意的是，ViewCompat仅仅让你调用不崩溃，并不保证你调用的结果在不同版本的机器上一致。<a id="more"></a><br><code>ViewCompat</code>代码组织的很优雅，有兴趣可以看它的源码。这几天在看代码时注意到<code>ViewCompat</code>的<code>canScrollVertically</code>和<code>canScrollHorizontally</code>方法，官方注释是这样写的：</p>
+<blockquote>
+<p>Check if this view can be scrolled vertically in a certain direction.</p>
+</blockquote>
+<p>也就是说，在<code>ViewCompat</code>的<code>canScrollVertically</code>和<code>canScrollHorizontally</code>方法中，我们可以来判断一个控件是否可以继续滚动，这就很有意思了。如果我可以判断出当前视图是否可以继续滚动，可以做出很多有意思的功能，比如下拉刷新或者上拉加载更多等等。</p>
+<p>那今天我们就来聊聊这个API<code>canScrollVertically</code>，<code>canScrollHorizontally</code>与之同理，希望可以帮助我们在自定义控件中提供新的思路。</p>
+<p>我们先看看这个API的具体使用，首先，我在布局文件中放入<code>ScrollView</code>控件，来看看效果：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">//在MainActivity中</div><div class="line"> @Override</div><div class="line">    public boolean dispatchTouchEvent(MotionEvent ev) &#123;</div><div class="line">            Log.e(TAG, &quot;canScrollVertically: &quot;+ViewCompat.canScrollVertically(mScrollView,-1));</div><div class="line">            return super.dispatchTouchEvent(ev);</div><div class="line">        &#125;</div></pre></td></tr></table></figure>
+<p><code>ViewCompat.canScrollVertically</code>的第一个参数表示我们要判断的控件，而第二个参数代表方向，<code>Negative to check scrolling up, positive to check scrolling down.</code>也就是说，负数代表对下滑检测，整数表示对上滑检测，可以看下源码：<br> <figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">private boolean canScrollingViewScrollVertically(ScrollingView view, int direction) &#123;</div><div class="line">           final int offset = view.computeVerticalScrollOffset();</div><div class="line">           final int range = view.computeVerticalScrollRange() -</div><div class="line">                   view.computeVerticalScrollExtent();</div><div class="line">           if (range == 0) return false;</div><div class="line">           if (direction &lt; 0) &#123;</div><div class="line">               return offset &gt; 0;</div><div class="line">           &#125; else &#123;</div><div class="line">               return offset &lt; range - 1;</div><div class="line">           &#125;</div><div class="line">       &#125;</div></pre></td></tr></table></figure></p>
+<p>打印如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">01-20 22:24:59.621 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: true</div><div class="line">01-20 22:24:59.638 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: true</div><div class="line">01-20 22:24:59.654 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: true</div><div class="line">01-20 22:24:59.671 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div><div class="line">01-20 22:24:59.688 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div><div class="line">01-20 22:24:59.704 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div><div class="line">01-20 22:24:59.721 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div><div class="line">01-20 22:24:59.738 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div><div class="line">01-20 22:24:59.754 20224-20224/example.view.com.myapplication5 E/MainActivity: canScrollVertically: false</div></pre></td></tr></table></figure>
+<p>当手指向下滑到视图最顶端的时候，方法返回false，而当我将<code>ViewCompat.canScrollVertically</code>第二个参数设置为正数1时，在手指上滑到页面最低端时，方法返回false。</p>
+<p>这样的话，写个小demo进一步熟悉这个API的使用，感觉以后可以在其他地方更多的用到这个。假设我们控件内部是<code>ScrollView</code>或者<code>ListView</code>或<code>RecyclerView</code>，我们就可以很容易的判断内部控件的滑动状态从而控制外部控件的滑动，比如整个外部控件在<code>ScrollView</code>滑动到顶部时可以下拉滑出界面，我们就可以在滑动过程中用<code>ViewCompat.canScrollVertically</code>来判断是否子控件滑动到顶部或者底部了，从而控制外部控件下滑操作：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/2157910-d73a5106717e3c4b.gif?imageMogr2/auto-orient/strip" alt="canScrollVertically "></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div></pre></td><td class="code"><pre><div class="line">    float mDownMotionY;</div><div class="line">    boolean mChildHasScrolled;</div><div class="line">    @Override</div><div class="line">    public boolean dispatchTouchEvent(MotionEvent ev) &#123;</div><div class="line"></div><div class="line">        switch (ev.getActionMasked()) &#123;</div><div class="line">            case MotionEvent.ACTION_DOWN:</div><div class="line">                mDownMotionY = ev.getY();</div><div class="line">                mChildHasScrolled = false;</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_MOVE:</div><div class="line">                float offsetY = mDownMotionY - ev.getY();</div><div class="line">                if (!canScrollVertically(view, (int) offsetY,ev))&#123;</div><div class="line">                    //说明滚动到底了</div><div class="line">                    Log.e(&quot;TAG&quot;, &quot;dispatchTouchEvent: &quot;+offsetY);</div><div class="line">                    if (offsetY &gt; 0)&#123;</div><div class="line">                        //说明滚动到底部了</div><div class="line">//                        mScrollView.setTranslationY(-offsetY);</div><div class="line">//                        return true;</div><div class="line">                    &#125;else &#123;</div><div class="line">                        //说明滚动到顶部了</div><div class="line">                        view.setTranslationY(-offsetY);</div><div class="line">                        return true;</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_UP:</div><div class="line"></div><div class="line">                if (view.getTranslationY() &lt; (getWindow().getDecorView().findViewById(Window.ID_ANDROID_CONTENT).getHeight()/2))&#123;</div><div class="line">                    view.animate().translationY(0).setDuration(300).start();</div><div class="line">                &#125;else &#123;</div><div class="line">                    view.animate().translationY(getWindow().getDecorView().getHeight()).setDuration(300).start();</div><div class="line">                &#125;</div><div class="line">                break;</div><div class="line">            default:</div><div class="line">                break;</div><div class="line">        &#125;</div><div class="line">         </div><div class="line">            return super.dispatchTouchEvent(ev);</div><div class="line">    &#125;</div><div class="line">    ／**</div><div class="line">      * 判断内部子控件是否滑动到顶部/底部</div><div class="line">      *／</div><div class="line">    private boolean canScrollVertically(View view, int offSet, MotionEvent ev) &#123;</div><div class="line"></div><div class="line">        if (!mChildHasScrolled &amp;&amp; !isTransformedTouchPointInView(ev, view)) &#123;</div><div class="line">            return false;</div><div class="line">        &#125;</div><div class="line">        if (ViewCompat.canScrollVertically(view, offSet)) &#123;</div><div class="line">            mChildHasScrolled = true;</div><div class="line">            return true;</div><div class="line">        &#125;</div><div class="line">        if (view instanceof ViewGroup) &#123;</div><div class="line">            ViewGroup vGroup = (ViewGroup) view;</div><div class="line">            for (int i = 0; i &lt; vGroup.getChildCount(); i++) &#123;</div><div class="line">                if (canScrollVertically(vGroup.getChildAt(i), offSet, ev)) &#123;</div><div class="line">                    mChildHasScrolled = true;</div><div class="line">                    return true;</div><div class="line">                &#125;</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        return false;</div><div class="line">    &#125;</div><div class="line">    /***</div><div class="line">     * 判断MotionEvent是否处于View上面</div><div class="line">     */</div><div class="line">    protected boolean isTransformedTouchPointInView(MotionEvent ev, View view) &#123;</div><div class="line">        float x = ev.getRawX();</div><div class="line">        float y = ev.getRawY();</div><div class="line">        int[] rect = new int[2];</div><div class="line">        view.getLocationInWindow(rect);</div><div class="line">        float localX = x - rect[0];</div><div class="line">        float localY = y - rect[1];</div><div class="line">        return localX &gt;= 0 &amp;&amp; localX &lt; (view.getRight() - view.getLeft())</div><div class="line">                &amp;&amp; localY &gt;= 0 &amp;&amp; localY &lt; (view.getBottom() - view.getTop());</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>当然如果发散思维想一下的话，那上拉加载更多我们就完全可以将<code>ScrollView</code>、<code>ListView</code>或<code>RecyclerView</code>放在我们自己定义的控件中，判断其状态显示上拉加载或者下拉显示更多，从而与各个控件处理逻辑完全解耦。当然，我觉得自己还有其他的更有意思的玩法，以后拿来尝试尝试吧～</p>
 
-        <div class="article-info info-on-right">
-          
+      
+
+      
+        <div class="page-reward">
+          <a href="javascript:;" class="page-reward-btn tooltip-top">
+            <div class="tooltip tooltip-east">
+            <span class="tooltip-item">
+              赏
+            </span>
+            <span class="tooltip-content">
+              <span class="tooltip-text">
+                <span class="tooltip-inner">
+                  <p class="reward-p"><i class="icon icon-quo-left"></i>谢谢你请我吃糖果<i class="icon icon-quo-right"></i></p>
+                  <div class="reward-box">
+                    
+                    
+                    <div class="reward-box-item">
+                      <img class="reward-img" src="/./assets/img/weixin_pay.png">
+                      <span class="reward-type">微信</span>
+                    </div>
+                    
+                  </div>
+                </span>
+              </span>
+            </span>
+          </div>
+          </a>
+        </div>
+      
+    </div>
+    <div class="article-info article-info-index">
+      
+      
 	<div class="article-tag tagcloud">
 		<i class="icon-price-tags icon"></i>
 		<ul class="article-tag-list">
@@ -187,7 +230,7 @@
 		</ul>
 	</div>
 
-          
+      
 	<div class="article-category tagcloud">
 		<i class="icon-book icon"></i>
 		<ul class="article-tag-list">
@@ -200,123 +243,104 @@
 	</div>
 
 
+      
+
+      
+        
+<div class="share-btn share-icons tooltip-left">
+  <div class="tooltip tooltip-east">
+    <span class="tooltip-item">
+      <a href="javascript:;" class="share-sns share-outer">
+        <i class="icon icon-share"></i>
+      </a>
+    </span>
+    <span class="tooltip-content">
+      <div class="share-wrap">
+        <div class="share-icons">
+          <a class="weibo share-sns" href="javascript:;" data-type="weibo">
+            <i class="icon icon-weibo"></i>
+          </a>
+          <a class="weixin share-sns wxFab" href="javascript:;" data-type="weixin">
+            <i class="icon icon-weixin"></i>
+          </a>
+          <a class="qq share-sns" href="javascript:;" data-type="qq">
+            <i class="icon icon-qq"></i>
+          </a>
+          <a class="douban share-sns" href="javascript:;" data-type="douban">
+            <i class="icon icon-douban"></i>
+          </a>
+          <a class="qzone share-sns" href="javascript:;" data-type="qzone">
+            <i class="icon icon-qzone"></i>
+          </a>
+          <a class="facebook share-sns" href="javascript:;" data-type="facebook">
+            <i class="icon icon-facebook"></i>
+          </a>
+          <a class="twitter share-sns" href="javascript:;" data-type="twitter">
+            <i class="icon icon-twitter"></i>
+          </a>
+          <a class="google share-sns" href="javascript:;" data-type="google">
+            <i class="icon icon-google"></i>
+          </a>
         </div>
-        <div class="clearfix"></div>
-    </header>
+      </div>
+    </span>
+  </div>
+</div>
+
+<div class="page-modal wx-share js-wx-box">
+    <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
+    <p>扫一扫，分享到微信</p>
+    <div class="wx-qrcode">
+      <img src="http://s.jiathis.com/qrcode.php?url=https://zhangke3106.github.io/2017/01/21/聊聊对Android视图滚动状态的监听/" alt="微信分享二维码">
+    </div>
+</div>
+
+<div class="mask js-mask"></div>
+      
+      <div class="clearfix"></div>
+    </div>
   </div>
 </article>
+
   
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/01/19/实现仿简书选取内容生成分享图片效果/" class="archive-article-date">
-  	<time datetime="2017-01-19T04:20:09.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-01-19</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/01/19/实现仿简书选取内容生成分享图片效果/">实现仿简书选取内容生成分享图片效果</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">android</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">android进阶</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/android/" class="article-tag-list-link color3">android</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
-  
-    
-    
-    <article class="archive-article archive-type-post">
-  <div class="archive-article-inner">
-    <header class="archive-article-header">
-      	<div class="article-meta">
-	      	<a href="/2017/01/19/两行代码搞定Android视图扩散切换效果/" class="archive-article-date">
-  	<time datetime="2017-01-19T04:14:09.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-01-19</time>
-</a>
-        </div>
-    	 
-  
-    <h1 itemprop="name">
-      <a class="archive-article-title" href="/2017/01/19/两行代码搞定Android视图扩散切换效果/">两行代码搞定Android视图扩散切换效果</a>
-    </h1>
-  
-
-        <div class="article-info info-on-right">
-          
-	<div class="article-tag tagcloud">
-		<i class="icon-price-tags icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">android</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">android进阶</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-          
-	<div class="article-category tagcloud">
-		<i class="icon-book icon"></i>
-		<ul class="article-tag-list">
-			 
-        		<li class="article-tag-list-item">
-        			<a href="/categories/android/" class="article-tag-list-link color3">android</a>
-        		</li>
-      		
-		</ul>
-	</div>
-
-
-        </div>
-        <div class="clearfix"></div>
-    </header>
-  </div>
-</article>
+<nav id="article-nav">
   
   
-    </div></section>
+    <a href="/2017/01/19/深入理解Java虚拟机-Java内存区域与内存泄露异常/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">深入理解Java虚拟机--Java内存区域与内存泄露异常</div>
+      <i class="icon-circle-right"></i>
+    </a>
+  
+</nav>
+
+
+
+
+
+
+  
+  <div class="duoshuo">
+	<!-- 多说评论框 start -->
+	<div class="ds-thread" data-thread-key="聊聊对Android视图滚动状态的监听" data-title="聊聊对Android视图滚动状态的监听" data-url="https://zhangke3106.github.io/2017/01/21/聊聊对Android视图滚动状态的监听/"></div>
+	<!-- 多说评论框 end -->
+	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+	<script type="text/javascript">
+	var duoshuoQuery = {short_name:"zhangke3016"};
+	(function() {
+		var ds = document.createElement('script');
+		ds.type = 'text/javascript';ds.async = true;
+		ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+		ds.charset = 'UTF-8';
+		(document.getElementsByTagName('head')[0] 
+		 || document.getElementsByTagName('body')[0]).appendChild(ds);
+	})();
+	</script>
+	<!-- 多说公共JS代码 end -->
+</div>
+
   
 
-    
+
 
 
           </div>
@@ -339,9 +363,9 @@
 	var yiliaConfig = {
 		mathjax: false,
 		isHome: false,
-		isPost: false,
+		isPost: true,
 		isArchive: false,
-		isTag: true,
+		isTag: false,
 		isCategory: false,
 		open_in_new: false,
 		root: "/",
