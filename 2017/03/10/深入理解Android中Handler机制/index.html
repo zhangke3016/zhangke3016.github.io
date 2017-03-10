@@ -6,31 +6,20 @@
   <meta name="renderer" content="webkit">
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
   <link rel="dns-prefetch" href="https://zhangke3106.github.io">
-  <title>深入聊聊Android事件分发机制 | Mr.zk的小窝</title>
+  <title>深入理解Android中Handler机制 | Mr.zk的小窝</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta name="description" content="在Android开发的过程中，自定义控件一直是我们绕不开的话题。而在这个话题中事件分发机制也是其中的重点和疑点，特别是当我们处理控件嵌套滑动事件时，正确的处理各个控件间事件分发拦截状态，可以实现更炫酷的控件动画效果。">
+  <meta name="description" content="对于一位Android开发者来说，对Handler、Looper、Message三个乖宝贝应该再熟悉不过了，这里我们先简单介绍下这三者的关系，之后再用Looper.loop方法做点有意思的事情，加深对运行循环的理解。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="深入聊聊Android事件分发机制">
-<meta property="og:url" content="https://zhangke3106.github.io/2017/02/09/深入聊聊Android事件分发机制/index.html">
+<meta property="og:title" content="深入理解Android中Handler机制">
+<meta property="og:url" content="https://zhangke3106.github.io/2017/03/10/深入理解Android中Handler机制/index.html">
 <meta property="og:site_name" content="Mr.zk的小窝">
-<meta property="og:description" content="在Android开发的过程中，自定义控件一直是我们绕不开的话题。而在这个话题中事件分发机制也是其中的重点和疑点，特别是当我们处理控件嵌套滑动事件时，正确的处理各个控件间事件分发拦截状态，可以实现更炫酷的控件动画效果。">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-e783984c9c9a8879.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-7d71eb5d5dff748e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-86a73841e51a2acf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-15175eea210f6a5c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-789d024c2d89a548.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-9ba49a1efaab7f2d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-5d37a56e226da363.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-8d3e91a7b71463f4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-b139ab24d743d594.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-eb2a4b8e0345daee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-4bc3567d3d6f3797.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-cc58caddfb8276a4.gif?imageMogr2/auto-orient/strip">
-<meta property="og:updated_time" content="2017-02-12T02:23:06.000Z">
+<meta property="og:description" content="对于一位Android开发者来说，对Handler、Looper、Message三个乖宝贝应该再熟悉不过了，这里我们先简单介绍下这三者的关系，之后再用Looper.loop方法做点有意思的事情，加深对运行循环的理解。">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/2157910-dfc888e59b481a71.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-03-10T08:28:35.000Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="深入聊聊Android事件分发机制">
-<meta name="twitter:description" content="在Android开发的过程中，自定义控件一直是我们绕不开的话题。而在这个话题中事件分发机制也是其中的重点和疑点，特别是当我们处理控件嵌套滑动事件时，正确的处理各个控件间事件分发拦截状态，可以实现更炫酷的控件动画效果。">
-<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/2157910-e783984c9c9a8879.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta name="twitter:title" content="深入理解Android中Handler机制">
+<meta name="twitter:description" content="对于一位Android开发者来说，对Handler、Looper、Message三个乖宝贝应该再熟悉不过了，这里我们先简单介绍下这三者的关系，之后再用Looper.loop方法做点有意思的事情，加深对运行循环的理解。">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/2157910-dfc888e59b481a71.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
   
     <link rel="alternative" href="/atom.xml" title="Mr.zk的小窝" type="application/atom+xml">
   
@@ -156,219 +145,61 @@
             <canvas data-colors="#eaeaea" data-sectionHeight="100" data-contentId="js-content" id="myCanvas1" class="anm-canvas"></canvas>
           </div>
           <div id="js-content" class="content-ll">
-            <article id="post-深入聊聊Android事件分发机制" class="article article-type-post " itemscope itemprop="blogPost">
+            <article id="post-深入理解Android中Handler机制" class="article article-type-post " itemscope itemprop="blogPost">
   <div class="article-inner">
     
       <header class="article-header">
         
   
     <h1 class="article-title" itemprop="name">
-      深入聊聊Android事件分发机制
+      深入理解Android中Handler机制
     </h1>
   
 
         
-        <a href="/2017/02/09/深入聊聊Android事件分发机制/" class="archive-article-date">
-  	<time datetime="2017-02-09T15:35:09.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-02-09</time>
+        <a href="/2017/03/10/深入理解Android中Handler机制/" class="archive-article-date">
+  	<time datetime="2017-03-10T08:20:09.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2017-03-10</time>
 </a>
         
       </header>
     
     <div class="article-entry" itemprop="articleBody">
       
-        <blockquote>
-<p>在Android开发的过程中，自定义控件一直是我们绕不开的话题。而在这个话题中事件分发机制也是其中的重点和疑点，特别是当我们处理控件嵌套滑动事件时，正确的处理各个控件间事件分发拦截状态，可以实现更炫酷的控件动画效果。<a id="more"></a></p>
-</blockquote>
-<h3 id="一、事件分发机制介绍"><a href="#一、事件分发机制介绍" class="headerlink" title="一、事件分发机制介绍"></a>一、事件分发机制介绍</h3><p>关于Android事件分发，我们主要分ViewGroup和View两个事件处理部分进行介绍，主要研究在处理事件过程中关注最多的三个方法<code>dispatchTouchEvent</code>、<code>onInterceptTouchEvent</code>、<code>onTouchEvent</code>，在ViewGroup和View对三个方法的支持如下图所示：</p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>ViewGroup</th>
-<th style="text-align:right">View</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>dispatchTouchEvent</td>
-<td>有</td>
-<td style="text-align:right">有</td>
-</tr>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>有</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>有</td>
-<td style="text-align:right">有</td>
-</tr>
-</tbody>
-</table>
-<p>在Android中，当用户触摸界面时系统会把产生一系列的<code>MotionEvent</code>，通过ViewGroup 的<code>dispatchTouchEvent</code>方法开始向下分发事件，在<code>dispatchTouchEvent</code>方法中，会调用<code>onInterceptTouchEvent</code>方法，如果该方法返回true，表明当前控件拦截了该事件，此后事件交由该控件处理并不再调用该控件的<code>onInterceptTouchEvent</code>方法。最后交由该控件的<code>onTouchEvent</code>方法对事件进行处理。如果当前控件在<code>onInterceptTouchEvent</code>方法中返回false，表示不拦截该控件，之后交由其子控件进行判断是否对事件进行拦截处理。可以用如下伪代码来对其进行处理：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">public boolean dispatchTouchEvent(MotionEvent event) &#123;</div><div class="line">        boolean consume = false;</div><div class="line">        if (onInterceptTouchEvent(event)) &#123;</div><div class="line">            consume = onTouchEvent(event);</div><div class="line">        &#125; else &#123;</div><div class="line">            consume = child.dispatchTouchEvent(event);</div><div class="line">        &#125;</div><div class="line">        return consume;</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-e783984c9c9a8879.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<p>先说结论再细分析：</p>
+        <p><img src="http://upload-images.jianshu.io/upload_images/2157910-dfc888e59b481a71.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="Looper"><br>对于一位Android开发者来说，对<code>Handler</code>、<code>Looper</code>、<code>Message</code>三个乖宝贝应该再熟悉不过了，这里我们先简单介绍下这三者的关系，之后再用<code>Looper.loop</code>方法做点有意思的事情，加深对运行循环的理解。<a id="more"></a></p>
+<h3 id="一、源码理解Handler、Looper、Message"><a href="#一、源码理解Handler、Looper、Message" class="headerlink" title="一、源码理解Handler、Looper、Message"></a>一、源码理解<code>Handler</code>、<code>Looper</code>、<code>Message</code></h3><p>通常我们在使用<code>Handler</code>时会在主线程中new出一个<code>Handler</code>来接收消息，我们来看下<code>Handler</code>源码：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line">     * Default constructor associates this handler with the &#123;@link Looper&#125; for the</div><div class="line">     * current thread.</div><div class="line">     *</div><div class="line">     * If this thread does not have a looper, this handler won&apos;t be able to receive messages</div><div class="line">     * so an exception is thrown.</div><div class="line">     */</div><div class="line">    public Handler() &#123;</div><div class="line">        this(null, false);</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p>在源码注释中说到默认的构造方法创建<code>Handler</code>，会从当前线程中取出<code>Looper</code>，如果当前线程没有<code>Looper</code>，这个<code>Handler</code>不能够接收到消息并会抛出异常。<br>我们继续点进去：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">public Handler(Callback callback, boolean async) &#123;</div><div class="line">        if (FIND_POTENTIAL_LEAKS) &#123;</div><div class="line">            final Class&lt;? extends Handler&gt; klass = getClass();</div><div class="line">            if ((klass.isAnonymousClass() || klass.isMemberClass() || klass.isLocalClass()) &amp;&amp;</div><div class="line">                    (klass.getModifiers() &amp; Modifier.STATIC) == 0) &#123;</div><div class="line">                Log.w(TAG, &quot;The following Handler class should be static or leaks might occur: &quot; +</div><div class="line">                    klass.getCanonicalName());</div><div class="line">            &#125;</div><div class="line">        &#125;</div><div class="line">        //获取Looper</div><div class="line">        mLooper = Looper.myLooper();</div><div class="line">        if (mLooper == null) &#123;</div><div class="line">            throw new RuntimeException(</div><div class="line">                &quot;Can&apos;t create handler inside thread that has not called Looper.prepare()&quot;);</div><div class="line">        &#125;</div><div class="line">        mQueue = mLooper.mQueue;</div><div class="line">        mCallback = callback;</div><div class="line">        mAsynchronous = async;</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line">    * Return the Looper object associated with the current thread.  Returns</div><div class="line">    * null if the calling thread is not associated with a Looper.</div><div class="line">    */</div><div class="line">   public static Looper myLooper() &#123;</div><div class="line">       return sThreadLocal.get();//从ThreadLocal中获取</div><div class="line">   &#125;</div></pre></td></tr></table></figure>
+<p>既然<code>Looper</code>是从<code>ThreadLocal</code>中获取的，那必然有时机要存进去，我们看下<code>Looper</code>是什么时候存进去的：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">/** Initialize the current thread as a looper.</div><div class="line">     * This gives you a chance to create handlers that then reference</div><div class="line">     * this looper, before actually starting the loop. Be sure to call</div><div class="line">     * &#123;@link #loop()&#125; after calling this method, and end it by calling</div><div class="line">     * &#123;@link #quit()&#125;.</div><div class="line">     */</div><div class="line">   public static void prepare() &#123;</div><div class="line">       prepare(true);</div><div class="line">   &#125;</div><div class="line"></div><div class="line">   private static void prepare(boolean quitAllowed) &#123;</div><div class="line">       if (sThreadLocal.get() != null) &#123;</div><div class="line">           throw new RuntimeException(&quot;Only one Looper may be created per thread&quot;);</div><div class="line">       &#125;</div><div class="line">       sThreadLocal.set(new Looper(quitAllowed));</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>也就是说我们在调用<code>Looper. prepare</code>方法时会创建<code>Looper</code>并存入<code>ThreadLocal</code>中，注意默认<code>quitAllowed</code>参数都为true，也就是默认创建的<code>Looper</code>都是可以退出的，我们可以点进去看看：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"></div><div class="line">private Looper(boolean quitAllowed) &#123;</div><div class="line">    mQueue = new MessageQueue(quitAllowed);</div><div class="line">    mThread = Thread.currentThread();</div><div class="line">&#125;</div><div class="line">//进去MessageQueue.java</div><div class="line">   MessageQueue(boolean quitAllowed) &#123;</div><div class="line">      mQuitAllowed = quitAllowed;</div><div class="line">      mPtr = nativeInit();</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p>⚠️注意：<code>MessageQueue</code>的成员变量<code>mQuitAllowed</code>，在调用<code>Looper.quit</code>方法时会进入<code>MessageQueue</code>对<code>mQuitAllowed</code>进行判断，可以简单看下源码，后面会再说到:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">//MessageQueue.java</div><div class="line">void quit(boolean safe) &#123;</div><div class="line">        //如果mQuitAllowed为false，也就是不允许退出时会报出异常</div><div class="line">        if (!mQuitAllowed) &#123;</div><div class="line">            throw new IllegalStateException(&quot;Main thread not allowed to quit.&quot;);</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        synchronized (this) &#123;</div><div class="line">            if (mQuitting) &#123;</div><div class="line">                return;</div><div class="line">            &#125;</div><div class="line">            mQuitting = true;</div><div class="line"></div><div class="line">            if (safe) &#123;</div><div class="line">                removeAllFutureMessagesLocked();</div><div class="line">            &#125; else &#123;</div><div class="line">                removeAllMessagesLocked();</div><div class="line">            &#125;</div><div class="line"></div><div class="line">            // We can assume mPtr != 0 because mQuitting was previously false.</div><div class="line">            nativeWake(mPtr);</div><div class="line">        &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p>看到这里我们应该是有疑问的，</p>
 <blockquote>
 <ol>
-<li>事件是由其父视图向子视图传递，如图为A-&gt;B-&gt;C</li>
-<li>如果当前控件需要拦截该事件，则在<code>onInterceptTouchEvent</code>方法中返回true，但真正决定是否处理事件是在<code>onTouchEvent</code>方法中，也就是说如果此时<code>onTouchEvent</code>方法返回了false，则此控件也表示不处理该事件，交由父控件的<code>onTouchEvent</code>方法来判断处理。如图：当事件由A分发至B，B在其<code>onInterceptTouchEvent</code>方法中返回true表示要拦截该事件，此时事件将不会再传给C，但在B的<code>onTouchEvent</code>方法中返回了false，表示不处理该事件，则事件以此向上传递交由A控件的<code>onTouchEvent</code>方法处理。即<strong><code>onInterceptTouchEvent</code>负责对事件进行拦截，拦截成功后交给最先遇到<code>onTouchEvent</code>返回true的那个view进行处理。</strong></li>
-<li>一旦控件确定处理该事件，则后续事件序列也会交由该控件处理，同时该控件的<code>onInterceptTouchEvent</code>方法将不再调用。</li>
-<li>由于View没有<code>onInterceptTouchEvent</code>方法，在其<code>dispatchTouchEvent</code>方法中调用<code>onTouchEvent</code>方法处理事件，如果返回false则表示事件不作处理。同时其ACTION_MOVE、ACTION_UP不会得到响应。</li>
-<li>View的<code>OnTouchListener</code>优先于<code>onTouchEvent</code>方法执行，如果<code>OnTouchListener</code>方法返回true，那么View的<code>dispatchTouchEvent</code>方法就返回true。而后则<code>onTouchEvent</code>方法得不到执行，同时因为<code>onClick</code>方法在<code>onTouchEvent</code>方法的ACTION_UP中调用，<code>onClick</code>方法也得不到执行。</li>
+<li>第一个疑问：默认我们调用<code>Looper.prepare</code>方法时<code>mQuitAllowed</code>变量都为true的，那它什么时候为false?又是被如何设为false的？</li>
+<li>第二个疑问：我们在创建<code>Handler</code>时，并没有往<code>ThreadLocal</code>中存<code>Looper</code>，而却直接就取出了<code>ThreadLocal</code>中的<code>Looper</code>，那么这个<code>Looper</code>是什么时候创建并存入的？</li>
 </ol>
 </blockquote>
-<p><strong>情况一、A\B\C <code>onInterceptTouchEvent</code> <code>onTouchEvent</code>均返回false</strong></p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>A(ViewGroup)</th>
-<th style="text-align:right">B(ViewGroup)</th>
-<th style="text-align:right">C(View)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">false</td>
-</tr>
-</tbody>
-</table>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-7d71eb5d5dff748e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件处理"></p>
-<p>当A、B、C同时返回false时，事件传递为A(onInterceptTouchEvent) –&gt;B(onInterceptTouchEvent) –&gt;C(onTouchEvent)–&gt;B(onTouchEvent) –&gt;A(onTouchEvent)，也就是事件从A传至C时，都没有拦截和处理事件，则事件再次向上传递调用B和A的<code>onTouchEvent</code>方法。</p>
-<p>看下打印的结果：</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-86a73841e51a2acf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<p><strong>情况二、B <code>onInterceptTouchEvent</code> 方法返回true</strong></p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>A(ViewGroup)</th>
-<th style="text-align:right">B(ViewGroup)</th>
-<th style="text-align:right">C(View)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">true</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">false</td>
-</tr>
-</tbody>
-</table>
-<p>当B<code>onInterceptTouchEvent</code>返回true时表示拦截了事件，C控件就无法响应该事件。</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-15175eea210f6a5c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-789d024c2d89a548.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="打印结果"></p>
-<p><strong>情况三、B <code>onInterceptTouchEvent</code> 、 <code>onTouchEvent</code>方法返回true</strong></p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>A(ViewGroup)</th>
-<th style="text-align:right">B(ViewGroup)</th>
-<th style="text-align:right">C(View)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">true</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">true</td>
-<td style="text-align:right">false</td>
-</tr>
-</tbody>
-</table>
-<p>当B<code>onInterceptTouchEvent</code>、<code>onTouchEvent</code>返回true时表示拦截处理了事件，C控件就无法响应该事件，同时事件在B的<code>onTouchEvent</code>之后将不再向上传递，随后事件将不再调用其<code>onInterceptTouchEvent</code>方法。</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-9ba49a1efaab7f2d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-5d37a56e226da363.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="打印结果"></p>
-<p><strong>情况四、C  <code>onTouchEvent</code>方法返回true</strong></p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>A(ViewGroup)</th>
-<th style="text-align:right">B(ViewGroup)</th>
-<th style="text-align:right">C(View)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">true</td>
-</tr>
-</tbody>
-</table>
-<p>当C<code>onTouchEvent</code>返回true时表示处理了该事件，之后事件就交由C控件处理，同时事件在C的<code>onTouchEvent</code>之后将不再向上传递。</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-8d3e91a7b71463f4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-b139ab24d743d594.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="打印结果"></p>
-<p><strong>情况五、A  <code>onInterceptTouchEvent</code>方法返回true</strong></p>
-<table>
-<thead>
-<tr>
-<th>事件种类</th>
-<th>A(ViewGroup)</th>
-<th style="text-align:right">B(ViewGroup)</th>
-<th style="text-align:right">C(View)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>onInterceptTouchEvent</td>
-<td>true</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">无</td>
-</tr>
-<tr>
-<td>onTouchEvent</td>
-<td>false</td>
-<td style="text-align:right">false</td>
-<td style="text-align:right">false</td>
-</tr>
-</tbody>
-</table>
-<p>当A<code>onInterceptTouchEvent</code>返回true时表示拦截了事件，之后事件就交由A的<code>onTouchEvent</code>方法处理，B、C就无法响应该事件。如果A<code>onTouchEvent</code>方法返回false，其ACTION_MOVE、ACTION_UP事件不会得到响应。</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-eb2a4b8e0345daee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="事件分发"></p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">    public boolean onTouchEvent(MotionEvent event) &#123;</div><div class="line">        Log.e(TAG, &quot;A --- onTouchEvent&quot;);</div><div class="line">        switch (event.getAction())&#123;</div><div class="line">            case MotionEvent.ACTION_MOVE:</div><div class="line">                Log.e(TAG, &quot;A --- onTouchEvent :ACTION_MOVE&quot;);</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_UP:</div><div class="line">                Log.e(TAG, &quot;A --- onTouchEvent :ACTION_UP&quot;);</div><div class="line">                break;</div><div class="line">        &#125;</div><div class="line">        return false;//super.onTouchEvent(event);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-4bc3567d3d6f3797.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="打印结果"></p>
-<h3 id="二、实现侧滑删除效果"><a href="#二、实现侧滑删除效果" class="headerlink" title="二、实现侧滑删除效果"></a>二、实现侧滑删除效果</h3><p>运用上面的知识学习，我们来实现一下简单的侧滑删除效果吧～</p>
-<p><img src="http://upload-images.jianshu.io/upload_images/2157910-cc58caddfb8276a4.gif?imageMogr2/auto-orient/strip" alt="侧滑删除效果"></p>
-<p>其核心代码主要在于对事件的拦截和处理上：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div></pre></td><td class="code"><pre><div class="line"> @Override</div><div class="line">    public boolean onInterceptTouchEvent(MotionEvent ev) &#123;</div><div class="line">//        boolean intercepter = false;</div><div class="line">        Log.e(&quot;TAG&quot;, &quot;onInterceptTouchEvent: &quot;+ev.getAction());</div><div class="line"></div><div class="line">        boolean intercepter = false;</div><div class="line">        if (isMoving)</div><div class="line">            intercepter = true;</div><div class="line">        switch (ev.getAction())&#123;</div><div class="line">            case MotionEvent.ACTION_DOWN:</div><div class="line">                downX = (int) ev.getX();</div><div class="line">                downY = (int) ev.getY();</div><div class="line"></div><div class="line">                if (mVelocityTracker == null)</div><div class="line">                    mVelocityTracker = VelocityTracker.obtain();</div><div class="line"></div><div class="line">                mVelocityTracker.clear();</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_MOVE:</div><div class="line"></div><div class="line">                moveX = (int) ev.getX();</div><div class="line">                moveY = (int) ev.getY();</div><div class="line"></div><div class="line"></div><div class="line">                Log.e(&quot;TAG&quot;, &quot;getScrollX: &quot;+getScrollX() );</div><div class="line">                if (Math.abs(moveX - downX) &gt; 0)&#123;</div><div class="line">                    intercepter = true;</div><div class="line"></div><div class="line">                    //Log.e(&quot;TAG&quot;,&quot;onInterceptTouchEvent: &quot;);</div><div class="line">                    //scrollBy(moveX - downX,0);</div><div class="line"></div><div class="line">                &#125;else &#123;</div><div class="line">                    intercepter = false;</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                downX = moveX;</div><div class="line">                downY = moveY;</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_UP:</div><div class="line">            case MotionEvent.ACTION_CANCEL:</div><div class="line"></div><div class="line">                intercepter = false;</div><div class="line"></div><div class="line">                break;</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        //scrollBy(45,0);</div><div class="line">        return intercepter;//</div><div class="line">        //super.onInterceptTouchEvent(ev);</div><div class="line"></div><div class="line">    &#125;</div><div class="line">    @Override</div><div class="line">    public boolean onTouchEvent(MotionEvent ev) &#123;</div><div class="line"></div><div class="line">        Log.e(&quot;TAG&quot;, &quot;onTouchEvent: &quot;+ev.getAction() );</div><div class="line"></div><div class="line">        mVelocityTracker.addMovement(ev);</div><div class="line">        switch (ev.getAction())&#123;</div><div class="line">            </div><div class="line">            case MotionEvent.ACTION_MOVE:</div><div class="line"></div><div class="line">                moveX = (int) ev.getX();</div><div class="line">                moveY = (int) ev.getY();</div><div class="line"></div><div class="line">                mVelocityTracker.computeCurrentVelocity(1000);</div><div class="line">                Log.e(&quot;TAG&quot;, &quot;getScrollX: &quot;+getScrollX() );</div><div class="line"></div><div class="line">                if (getScrollX()+downX - moveX&gt;=0 &amp;&amp; getScrollX()+downX - moveX &lt;= view1.getMeasuredWidth())&#123;</div><div class="line"></div><div class="line">                    scrollBy(downX - moveX,0);</div><div class="line">                 &#125;</div><div class="line"></div><div class="line">                isMoving = true;</div><div class="line">                downX = moveX;</div><div class="line">                downY = moveY;</div><div class="line">                break;</div><div class="line">            case MotionEvent.ACTION_UP:</div><div class="line">            case MotionEvent.ACTION_CANCEL:</div><div class="line"></div><div class="line">                Log.e(&quot;TAG1&quot;, &quot;getXVelocity: &quot;+mVelocityTracker.getXVelocity() );</div><div class="line">                Log.e(&quot;TAG1&quot;, &quot;getYVelocity: &quot;+mVelocityTracker.getYVelocity() );</div><div class="line">                //</div><div class="line">                if (getScrollX()&gt;=view1.getMeasuredWidth()/2 || mVelocityTracker.getXVelocity() &lt; -ViewConfiguration.get(getContext()).getScaledMinimumFlingVelocity())&#123;</div><div class="line">                    //scrollTo(view1.getMeasuredWidth(),0);</div><div class="line">                    open();</div><div class="line">                &#125;else &#123;</div><div class="line">                    //scrollTo(0,0);</div><div class="line">                   close();</div><div class="line">                &#125;</div><div class="line"></div><div class="line">                mVelocityTracker.clear();</div><div class="line">                mVelocityTracker.recycle();</div><div class="line">                mVelocityTracker = null;</div><div class="line">                break;</div><div class="line">        &#125;</div><div class="line">        return true;//super.onTouchEvent(ev);</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
-<p>这里整个父布局继承自<code>ViewGroup</code>，在<code>onMeasure</code>中测量子控件大小：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">   protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) &#123;</div><div class="line"></div><div class="line">       super.onMeasure(widthMeasureSpec, heightMeasureSpec);</div><div class="line">       measureChildren(widthMeasureSpec, heightMeasureSpec);</div><div class="line">       setMeasuredDimension(getMeasuredWidth(), getMeasuredHeight());</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
-<p>在<code>onFinishInflate</code>方法中获取各个子控件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">    protected void onFinishInflate() &#123;</div><div class="line">        super.onFinishInflate();</div><div class="line">         view = getChildAt(0);</div><div class="line">         view1 = getChildAt(1);</div><div class="line">        if (mScroller == null)</div><div class="line">            mScroller = new Scroller(getContext());</div><div class="line"></div><div class="line">        view.setOnTouchListener(new OnTouchListener() &#123;</div><div class="line">            @Override</div><div class="line">            public boolean onTouch(View mViewm, MotionEvent mMotionEventm) &#123;</div><div class="line">                if (mMotionEventm.getAction() == MotionEvent.ACTION_UP</div><div class="line">                        &amp;&amp; isOpen)&#123;</div><div class="line">                    close();</div><div class="line">                &#125;</div><div class="line">                if (mMotionEventm.getAction() == MotionEvent.ACTION_DOWN)&#123;</div><div class="line">                    if (mOnChangeMenuListener!=null)&#123;</div><div class="line">                        mOnChangeMenuListener.onStartTouch();</div><div class="line">                    &#125;</div><div class="line">                &#125;</div><div class="line">                return false;</div><div class="line">            &#125;</div><div class="line">        &#125;);</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
-<p>并在<code>onLayout</code>方法中布局子控件：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">    protected void onLayout(boolean mBm, int mIm, int mIm1, int mIm2, int mIm3) &#123;</div><div class="line">        if (getChildCount()!=2)&#123;</div><div class="line">            throw new IllegalArgumentException(&quot;必须包含两个子控件&quot;);</div><div class="line">        &#125;</div><div class="line">        Log.e(&quot;TAG&quot;, &quot;onLayout:getWidth &quot;+view.getWidth() );</div><div class="line">            view.layout(0,0,view.getMeasuredWidth(),view.getMeasuredHeight());</div><div class="line">            view1.layout(view.getMeasuredWidth(),0,view.getMeasuredWidth()+view1.getMeasuredWidth(),view1.getMeasuredHeight());</div><div class="line"></div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
-<p>重点在对<code>onInterceptTouchEvent</code>和<code>onTouchEvent</code>方法的处理，我们在<code>onInterceptTouchEvent</code>中处理是否拦截该事件。如果手指是向左滑动，则表示用户在进行侧滑删除操作，则拦截该事件，需要注意的是，一旦拦截了该事件，之后事件将不调用该控件的<code>onInterceptTouchEvent</code>方法，所以我们将具体的处理逻辑放在<code>onTouchEvent</code>方法中，该方法返回true表示处理该事件，此后事件都由<code>dispatchTouchEvent</code>方法交由<code>onTouchEvent</code>方法处理。在<code>onTouchEvent</code>方法中调用<code>scrollBy</code>方法实现控件左右滑动，从而实现类似侧滑删除效果。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">@Override</div><div class="line">    public void computeScroll() &#123;</div><div class="line">        if (mScroller.computeScrollOffset())&#123;</div><div class="line">            scrollTo(mScroller.getCurrX(),mScroller.getCurrY());</div><div class="line">            invalidate();</div><div class="line">        &#125;else &#123;</div><div class="line">            isMoving = false;</div><div class="line">        &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
-<p>为使滑动效果更自然，用<code>Scroller</code>在手指抬起的时候控制控件打开或者闭合，<code>Scroller</code>的使用也很简单，抬起时调用其<code>startScroll</code>方法并刷新界面，在控件<code>computeScroll</code>方法中判断是否滑动完毕并刷新界面，在<code>invalidate</code>方法中会调用<code>computeScroll</code>从而直到滑动结束。</p>
-<p>好了，总的实现就这么多，希望可以加深对事件分发机制的理解～</p>
+<p>这里就要说到<code>ActivityThread</code>中<code>main</code>方法了。Zygote进程孵化出新的应用进程后，会执行<code>ActivityThread</code>类的<code>main</code>方法。在该方法里会先准备好<code>Looper</code>和消息队列，并将<code>Looper</code>存入<code>ThreadLocal</code>中，然后调用<code>attach</code>方法将应用进程绑定到<code>ActivityManagerService</code>，然后进入loop循环，不断地读取消息队列里的消息，并分发消息。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div></pre></td><td class="code"><pre><div class="line">//ActivityThread</div><div class="line"> public static void main(String[] args) &#123;</div><div class="line">        SamplingProfilerIntegration.start();</div><div class="line"></div><div class="line">        // CloseGuard defaults to true and can be quite spammy.  We</div><div class="line">        // disable it here, but selectively enable it later (via</div><div class="line">        // StrictMode) on debug builds, but using DropBox, not logs.</div><div class="line">        CloseGuard.setEnabled(false);</div><div class="line"></div><div class="line">        Environment.initForCurrentUser();</div><div class="line"></div><div class="line">        // Set the reporter for event logging in libcore</div><div class="line">        EventLogger.setReporter(new EventLoggingReporter());</div><div class="line"></div><div class="line">        Process.setArgV0(&quot;&lt;pre-initialized&gt;&quot;);</div><div class="line">        //创建主线程的阻塞队列</div><div class="line">        Looper.prepareMainLooper();</div><div class="line"></div><div class="line">         // 创建ActivityThread实例</div><div class="line">        ActivityThread thread = new ActivityThread();</div><div class="line">        //执行初始化</div><div class="line">        thread.attach(false);</div><div class="line"></div><div class="line">        if (sMainThreadHandler == null) &#123;</div><div class="line">            sMainThreadHandler = thread.getHandler();</div><div class="line">        &#125;</div><div class="line"></div><div class="line">        AsyncTask.init();</div><div class="line"></div><div class="line">        if (false) &#123;</div><div class="line">            Looper.myLooper().setMessageLogging(new</div><div class="line">                    LogPrinter(Log.DEBUG, &quot;ActivityThread&quot;));</div><div class="line">        &#125;</div><div class="line">        //开启循环</div><div class="line">        Looper.loop();</div><div class="line"></div><div class="line">        throw new RuntimeException(&quot;Main thread loop unexpectedly exited&quot;);</div><div class="line">    &#125;</div></pre></td></tr></table></figure>
+<p>我们看下开启的loop循环吧：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div></pre></td><td class="code"><pre><div class="line">/**</div><div class="line">     * Run the message queue in this thread. Be sure to call</div><div class="line">     * &#123;@link #quit()&#125; to end the loop.</div><div class="line">     */</div><div class="line">    public static void loop() &#123;</div><div class="line">        final Looper me = myLooper();</div><div class="line">        if (me == null) &#123;</div><div class="line">            throw new RuntimeException(&quot;No Looper; Looper.prepare() wasn&apos;t called on this thread.&quot;);</div><div class="line">        &#125;</div><div class="line">        final MessageQueue queue = me.mQueue;</div><div class="line"></div><div class="line">        // Make sure the identity of this thread is that of the local process,</div><div class="line">        // and keep track of what that identity token actually is.</div><div class="line">        Binder.clearCallingIdentity();</div><div class="line">        final long ident = Binder.clearCallingIdentity();</div><div class="line"></div><div class="line">        for (;;) &#123;</div><div class="line">            Message msg = queue.next(); // might block</div><div class="line">            if (msg == null) &#123;</div><div class="line">                // No message indicates that the message queue is quitting.</div><div class="line">                return;</div><div class="line">            &#125;</div><div class="line"></div><div class="line">            // This must be in a local variable, in case a UI event sets the logger</div><div class="line">            Printer logging = me.mLogging;</div><div class="line">            if (logging != null) &#123;</div><div class="line">                logging.println(&quot;&gt;&gt;&gt;&gt;&gt; Dispatching to &quot; + msg.target + &quot; &quot; +</div><div class="line">                        msg.callback + &quot;: &quot; + msg.what);</div><div class="line">            &#125;</div><div class="line">            //注意这里   msg.target为发送msg的Handler</div><div class="line">            msg.target.dispatchMessage(msg);</div><div class="line"></div><div class="line">            if (logging != null) &#123;</div><div class="line">                logging.println(&quot;&lt;&lt;&lt;&lt;&lt; Finished to &quot; + msg.target + &quot; &quot; + msg.callback);</div><div class="line">            &#125;</div><div class="line"></div><div class="line">            // Make sure that during the course of dispatching the</div><div class="line">            // identity of the thread wasn&apos;t corrupted.</div><div class="line">            final long newIdent = Binder.clearCallingIdentity();</div><div class="line">            if (ident != newIdent) &#123;</div><div class="line">                Log.wtf(TAG, &quot;Thread identity changed from 0x&quot;</div><div class="line">                        + Long.toHexString(ident) + &quot; to 0x&quot;</div><div class="line">                        + Long.toHexString(newIdent) + &quot; while dispatching to &quot;</div><div class="line">                        + msg.target.getClass().getName() + &quot; &quot;</div><div class="line">                        + msg.callback + &quot; what=&quot; + msg.what);</div><div class="line">            &#125;</div><div class="line"></div><div class="line">            msg.recycleUnchecked();</div><div class="line">        &#125;</div><div class="line">    &#125;</div></pre></td></tr></table></figure></p>
+<p><code>Looper.loop</code>方法内部是个死循环(for(;;))。<code>queue.next();</code>是从阻塞队列里取走头部的Message，当没有Message时主线程就会阻塞。view绘制，事件分发，activity启动，activity的生命周期回调等等都是一个个的Message，系统会把这些Message插入到主线程中唯一的queue中，所有的消息都排队等待主线程的执行。<br>回过来我们捋一下思路，<strong>首先</strong>，我们在主线程中创建了<code>Handler</code>，在<code>Handler</code>的构造方法中会判断是否创建了<code>Looper</code>，由于在<code>ActivityThread.main</code>方法中我们初始化了<code>Looper</code>并将其存入<code>ThreadLocal</code>中，所以可以正常创建<code>Handler</code>。（而如果不是在主线程中创建<code>Handler</code>，则需要在创建之前手动调用<code>Looper.prepare</code>方法。）在<code>Looper</code>的构造方法中创建了<code>MessageQueue</code>消息队列用于存取Message。<strong>然后</strong>，<code>Handler.sendMessage</code>发送消息，在<code>queue.enqueueMessage(msg, uptimeMillis)</code>方法中将Message存入<code>MessageQueue</code>中，并最终在<code>Loop.loop</code>循环中取出消息调用<code>msg.target.dispatchMessage(msg);</code>也就是发送消息的<code>Handler</code>的<code>dispatchMessage</code>方法处理消息，在<code>dispatchMessage</code>最终调用了<code>handleMessage(msg);</code>方法。这样我们就可以正常处理发送到主线程的消息了。</p>
+<h3 id="二、用Looper搞事情"><a href="#二、用Looper搞事情" class="headerlink" title="二、用Looper搞事情"></a>二、用Looper搞事情</h3><blockquote>
+<ol>
+<li>异步任务时阻塞线程，让程序按需要顺序执行</li>
+<li>判断主线程是否阻塞</li>
+<li>防止程序异常崩溃</li>
+</ol>
+</blockquote>
+<p><strong>1. 异步任务时阻塞线程，让程序按需要顺序执行</strong><br>在处理异步任务的时候，通常我们会传入回调来处理请求成功或者失败的逻辑，而我们通过<code>Looper</code>处理消息机制也可以让其顺序执行，不使用回调。我们来看下吧：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">String a = &quot;1&quot;;</div><div class="line">public void click(View v)&#123;</div><div class="line">    new Thread(new Runnable() &#123;</div><div class="line">        @Override</div><div class="line">        public void run() &#123;</div><div class="line">            //模拟耗时操作</div><div class="line">            SystemClock.sleep(2000);</div><div class="line">            a = &quot;22&quot;;</div><div class="line">            mHandler.post(new Runnable() &#123;</div><div class="line">                @Override</div><div class="line">                public void run() &#123;</div><div class="line">                    mHandler.getLooper().quit();</div><div class="line">                &#125;</div><div class="line">            &#125;);</div><div class="line">        &#125;</div><div class="line">    &#125;).start();</div><div class="line"></div><div class="line">    try&#123;</div><div class="line">        Looper.loop();</div><div class="line">    &#125;catch (Exception e)&#123;</div><div class="line">    &#125;</div><div class="line">   Toast.makeText(getApplicationContext(),a,Toast.LENGTH_LONG).show();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>当点击按钮的时候我们开启线程处理耗时操作，之后调用<code>Looper.loop();</code>方法处理消息循环，也就是说主线程又开始不断的读取queue中的Message并执行。这样当执行<code>mHandler.getLooper().quit();</code>时会调用<code>MessageQueue</code>的<code>quit</code>方法：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"> void quit(boolean safe) &#123;</div><div class="line">        if (!mQuitAllowed) &#123;</div><div class="line">            throw new IllegalStateException(&quot;Main thread not allowed to quit.&quot;);</div><div class="line">        &#125;</div><div class="line">        ...</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>这个就到了之前我们分析的变量<code>mQuitAllowed</code>,主线程不允许退出，这里会抛出异常，而最终这段代码是在<code>Looper.loop</code>方法中获取消息调用<code>msg.target.dispatchMessage</code>执行的，我们将<code>Looper.loop</code>的异常给捕获住了，从而之后代码继续执行，弹出Toast。</p>
+<p><strong>2.  判断主线程是否阻塞</strong><br>一般来说，<code>Loop.loop</code>方法中会不断取出Message，调用其绑定的Handler在UI线程进行执行主线程刷新操作。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">if (logging != null) &#123;</div><div class="line">    logging.println(&quot;&gt;&gt;&gt;&gt;&gt; Dispatching to &quot; + msg.target + &quot; &quot; +</div><div class="line">            msg.callback + &quot;: &quot; + msg.what);</div><div class="line">&#125;</div><div class="line">//注意这里   msg.target为发送msg的Handler</div><div class="line">msg.target.dispatchMessage(msg);</div><div class="line"></div><div class="line">if (logging != null) &#123;</div><div class="line">    logging.println(&quot;&lt;&lt;&lt;&lt;&lt; Finished to &quot; + msg.target + &quot; &quot; + msg.callback);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p>也就是这里，基本上可以说<code>msg.target.dispatchMessage(msg);</code>我们可以根据这行代码的执行时间来判断UI线程是否有耗时操作。</p>
+<p>在<code>msg.target.dispatchMessage(msg);</code>前后，分别有<code>logging</code>判断并打印<code>&gt;&gt;&gt;&gt;&gt; Dispatching to</code>和<code>&lt;&lt;&lt;&lt;&lt; Finished to</code>的log，我们可以设置<code>logging</code>并打印相应时间，基本就可以判断消耗时间。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">  Looper.getMainLooper().setMessageLogging(new Printer() &#123;</div><div class="line">    private static final String START = &quot;&gt;&gt;&gt;&gt;&gt; Dispatching&quot;;</div><div class="line">    private static final String END = &quot;&lt;&lt;&lt;&lt;&lt; Finished&quot;;</div><div class="line"></div><div class="line">    @Override</div><div class="line">    public void println(String x) &#123;</div><div class="line">        if (x.startsWith(START)) &#123;</div><div class="line">            //开始</div><div class="line">        &#125;</div><div class="line">        if (x.startsWith(END)) &#123;</div><div class="line">           //结束</div><div class="line">        &#125;</div><div class="line">    &#125;</div><div class="line">&#125;);</div></pre></td></tr></table></figure>
+<p><strong>3. 防止程序异常崩溃</strong><br>既然主线程异常事件最终都是在<code>Looper.loop</code>调用中发生的，那我们在<code>Looper.loop</code>方法中将异常捕获住，那主线程的异常也就不会导致程序异常了：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">private Handler mHandler = new Handler();</div><div class="line">   @Override</div><div class="line">   protected void onCreate(@Nullable Bundle savedInstanceState) &#123;</div><div class="line">       super.onCreate(savedInstanceState);</div><div class="line">       setContentView(R.layout.layout_test);</div><div class="line"></div><div class="line">       mHandler.post(new Runnable() &#123;</div><div class="line">           @Override</div><div class="line">           public void run() &#123;</div><div class="line">              while (true)&#123;</div><div class="line">                  try&#123;</div><div class="line">                      Looper.loop();</div><div class="line">                  &#125;catch (Exception e)&#123;</div><div class="line">                  &#125;</div><div class="line">              &#125;</div><div class="line">           &#125;</div><div class="line">       &#125;);</div><div class="line">   &#125;</div><div class="line">   public void click2(View v)&#123;</div><div class="line">       int a = 1/0;//除数为0  运行时报错</div><div class="line">   &#125;</div></pre></td></tr></table></figure></p>
+<p>主线程的所有异常都会从我们手动调用的<code>Looper.loop</code>处抛出，一旦抛出就会被<code>try{}catch</code>捕获，这样主线程就不会崩溃了。此原理的开源项目：<a href="https://github.com/android-notes/Cockroach" target="_blank" rel="external">Cockroach</a>，有兴趣可以看下具体实现。</p>
 
       
 
@@ -413,10 +244,6 @@
       		 
         		<li class="article-tag-list-item">
         			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">android进阶</a>
-        		</li>
-      		 
-        		<li class="article-tag-list-item">
-        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">android事件分发</a>
         		</li>
       		
 		</ul>
@@ -483,7 +310,7 @@
     <a class="close js-modal-close" href="javascript:;"><i class="icon icon-close"></i></a>
     <p>扫一扫，分享到微信</p>
     <div class="wx-qrcode">
-      <img src="http://s.jiathis.com/qrcode.php?url=https://zhangke3106.github.io/2017/02/09/深入聊聊Android事件分发机制/" alt="微信分享二维码">
+      <img src="http://s.jiathis.com/qrcode.php?url=https://zhangke3106.github.io/2017/03/10/深入理解Android中Handler机制/" alt="微信分享二维码">
     </div>
 </div>
 
@@ -497,18 +324,9 @@
   
 <nav id="article-nav">
   
-    <a href="/2017/03/10/深入理解Android中Handler机制/" id="article-nav-newer" class="article-nav-link-wrap">
-      <i class="icon-circle-left"></i>
-      <div class="article-nav-title">
-        
-          深入理解Android中Handler机制
-        
-      </div>
-    </a>
   
-  
-    <a href="/2017/01/21/聊聊对Android视图滚动状态的监听/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">聊聊对Android视图滚动状态的监听</div>
+    <a href="/2017/02/09/深入聊聊Android事件分发机制/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">深入聊聊Android事件分发机制</div>
       <i class="icon-circle-right"></i>
     </a>
   
@@ -522,7 +340,7 @@
   
   <div class="duoshuo">
 	<!-- 多说评论框 start -->
-	<div class="ds-thread" data-thread-key="深入聊聊Android事件分发机制" data-title="深入聊聊Android事件分发机制" data-url="https://zhangke3106.github.io/2017/02/09/深入聊聊Android事件分发机制/"></div>
+	<div class="ds-thread" data-thread-key="深入理解Android中Handler机制" data-title="深入理解Android中Handler机制" data-url="https://zhangke3106.github.io/2017/03/10/深入理解Android中Handler机制/"></div>
 	<!-- 多说评论框 end -->
 	<!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 	<script type="text/javascript">
